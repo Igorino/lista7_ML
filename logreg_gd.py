@@ -65,10 +65,38 @@ def train_logistic_gd(x, y, lr=0.1, epochs=1000):
 
     return w, b
 
-# Treino
-w, b = train_logistic_gd(x_train, y_train)
+# Treinamento do one vs all
+# Decompoe o problema multiclasse em vários problemas independentes
+def train_one_vs_all(x, y, num_classes):
+    models = []
 
-# Função de predição
+    for k in range(num_classes):
+        # Classe k vs o resto
+        y_binary = (y == k).astype(int)
+
+        # Aqui executa a regressão logística pra cada classe
+        w, b = train_logistic_gd(x, y_binary)
+        models.append((w,b))
+
+    return models
+
+#  Treino Antigo
+#w, b = train_logistic_gd(x_train, y_train)
+
+def predict_ova(x, models):
+    probs = []
+
+    for w, b in models:
+        prob = sigmoid(x @ w + b)
+        probs.append(prob)
+
+    # shape: (n_classes, n_samples) -> transpor
+    probs = np.vstack(probs).T
+
+    # pega a classe com maior prob
+    return np.argmax(probs, axis=1)
+
+# Função de predição antiga
 # Threshold de 0.5
 # Retorna 0 ou 1
 def predict(x, w, b):
@@ -78,7 +106,17 @@ def predict(x, w, b):
 #   w -> os pesos aprendidos pelo modelo
 #   b -> o viés (bias/intercepto)
 
-y_pred = predict(x_test, w, b)
-acc = (y_pred == y_test).mean()
+# Predição antiga
+# y_pred = predict(x_test, w, b)
 
+# Numero de classes é a quantidade de itens no vetor y
+num_classes = len(np.unique(y))
+
+# treina o modelo
+models = train_one_vs_all(x_train, y_train, num_classes)
+
+# Realiza a predição com base no one vs all
+y_pred = predict_ova(x_test, models)
+
+acc = (y_pred == y_test).mean()
 print("Acurácia:", acc)

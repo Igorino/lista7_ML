@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from itertools import combinations
 
 # Dataset Iris direto do sklearn
 iris = load_iris()
@@ -82,9 +83,30 @@ def train_one_vs_all(x, y, num_classes):
 
     return models
 
+# Treinamento do one vs one
+def train_one_vs_one(x, y):
+    models = []
+    classes = np.unique(y)
+
+    for c1, c2 in combinations(classes, 2):
+        # filta só as duas classes
+        mask = (y == c1) | (y == c2)
+        x_pair = x[mask]
+        y_pair = y[mask]
+
+        # binariza: c1 vira 1, c2 vira 0
+        y_binary = (y_pair == c1).astype(int)
+
+        w, b = train_logistic_gd(x_pair, y_binary)
+
+        models.append((c1, c2, w, b))
+
+    return models
+
 #  Treino Antigo
 #w, b = train_logistic_gd(x_train, y_train)
 
+# Função de predição one-vs-all
 def predict_ova(x, models):
     probs = []
 
@@ -97,6 +119,23 @@ def predict_ova(x, models):
 
     # pega a classe com maior prob
     return np.argmax(probs, axis=1)
+
+# Função de predição one-vs-one
+def predict_ovo(x, models):
+    n_samples = x.shape[0]
+    votes = np.zeros((n_samples, len(np.unique(y))), dtype=int)
+
+    for c1, c2, w, b in models:
+        prob = sigmoid(x @ w + b)
+        preds = (prob >= 0.5).astype(int)
+
+        for i, p in enumerate(preds):
+            if p == 1:
+                votes[i, c1] += 1
+            else:
+                votes[i, c2] += 1
+
+    return np.argmax(votes, axis=1)
 
 # Função de predição antiga
 # Threshold de 0.5
@@ -115,10 +154,14 @@ def predict(x, w, b):
 num_classes = len(np.unique(y))
 
 # treina o modelo
-models = train_one_vs_all(x_train, y_train, num_classes)
+#models = train_one_vs_all(x_train, y_train, num_classes)
+models = train_one_vs_one(x_train, y_train)
 
 # Realiza a predição com base no one vs all
-y_pred = predict_ova(x_test, models)
+# y_pred = predict_ova(x_test, models)
+
+# Realiza a predição com base no one-vs-one
+y_pred = predict_ovo(x_test, models)
 
 acc = (y_pred == y_test).mean()
 print("Acurácia:", acc)

@@ -15,7 +15,9 @@ y = iris.target
 # Transforma em um vetor booleano
 # (setosa é 0, se for setosa é 1, que é true)
 # Daí transforma em um problema binário
-y = (y == 0).astype(int)
+# y = (y == 0).astype(int)
+# Como aqui a execução agora é em one-vs-all, não faz sentido fazer isso
+# Senão quebra a lógica de treinar vários modelos hahahaha
 
 # Aqui faz o split e a estraficação
 # 70 treino, 30 teste

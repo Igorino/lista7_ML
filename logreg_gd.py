@@ -73,6 +73,10 @@ w, b = train_logistic_gd(x_train, y_train)
 # Retorna 0 ou 1
 def predict(x, w, b):
     return (sigmoid(x @ w + b) >= 0.5).astype(int)
+# Lembrando:
+#   x -> Dados de entradas (features)
+#   w -> os pesos aprendidos pelo modelo
+#   b -> o viés (bias/intercepto)
 
 y_pred = predict(x_test, w, b)
 acc = (y_pred == y_test).mean()
